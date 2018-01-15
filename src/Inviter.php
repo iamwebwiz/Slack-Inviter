@@ -1,4 +1,5 @@
 <?php
+
 namespace Slack;
 
 /**
@@ -6,7 +7,8 @@ namespace Slack;
  * @author fateyan <fateyan.tw@gmail.com>
  */
 
-class Inviter {
+class Inviter
+{
 
     /**
      * Composer dependency, Google reCAPTCHA, \ReCaptcha\ReCaptcha
@@ -20,7 +22,8 @@ class Inviter {
      */
     private $_config;
 
-    public function __construct($config) {
+    public function __construct($config) 
+    {
         $this->_checkConfig($config);
         $this->_config = $config;
         $this->_captcha = new \ReCaptcha\ReCaptcha($this->_config['recaptcha']['secret']);
@@ -34,7 +37,8 @@ class Inviter {
      * Homepage
      * @var
      */
-    public function index() {
+    public function index() 
+    {
         $data['captcha']   = $this->_config['recaptcha']['sitekey'];
         $data['title']     = $this->_config['title'];
         $data['header']    = $this->_config['message']['header'];
@@ -52,17 +56,18 @@ class Inviter {
      * A page for send invitation request to Slack
      * @uses $_POST(email, firstname, lastname, captcha)
      */
-    public function send() {
+    public function send() 
+    {
         $data = [];
         $errors = [];
         $message = $this->_config['message'];
 
-        if( !$this->_checkCaptcha($_POST) ) {
+        if ( !$this->_checkCaptcha($_POST) ) {
             $errors[] = 'Your captcha is wrong.';
             include BASE_PATH . 'views/error.php';
             return;
         }
-        if( empty($_POST['email']) ) {
+        if ( empty($_POST['email']) ) {
             $errors[] = 'Your email is empty.';
             include BASE_PATH . 'views/error.php';
             return;
@@ -70,19 +75,19 @@ class Inviter {
 
         $data['email'] = $_POST['email'];
 
-        if( isset($_POST['firstname']) )
+        if ( isset($_POST['firstname']) )
             $data['firstname'] = $_POST['firstname'];
-        if( isset($_POST['lastname']) )    
+        if ( isset($_POST['lastname']) )    
             $data['lastname'] = $_POST['lastname'];
 
         $response = json_decode($this->_slackInvite($data), TRUE);
 
-        if(isset($response['ok']) && $response['ok'] === TRUE) {
+        if (isset($response['ok']) && $response['ok'] === TRUE) {
             include BASE_PATH . 'views/succeed.php';
             return;
         } 
 
-        if(isset($response['error'])) {
+        if (isset($response['error'])) {
             if($response['error'] === 'invalid_email')
                 $errors[] = "Invalid email.";
             if($response['error'] === 'already_invited')
@@ -97,7 +102,8 @@ class Inviter {
      * @param string captcha
      * @return bool
      */
-    private function _checkCaptcha($post) {
+    private function _checkCaptcha($post) 
+    {
         $resp = $this->_captcha->verify($post['g-recaptcha-response'], $_SERVER['REMOTE_ADDR']);
         return $resp->isSuccess() ? TRUE : FALSE;
     }
@@ -114,15 +120,17 @@ class Inviter {
      * @param $domain
      * @return $fixedDomain
      */
-    private function _fixDomain($domain) {
+    private function _fixDomain($domain) 
+    {
         return trim(preg_replace('/\.slack\.com/', '', $domain), '. ');
     }
 
     /**
      * @param array configuration of /config.inc.php
      */
-    private function _checkConfig($cfg) {
-        if( !is_array($cfg) ) {
+    private function _checkConfig($cfg) 
+    {
+        if ( !is_array($cfg) ) {
             die('missing configuration');
         }
         $errors = [];
@@ -136,7 +144,7 @@ class Inviter {
         $errors[] = empty($cfg['recaptcha']['sitekey']) ? "Missing RECAPTCHA_SITEKEY" : '';
         $errors[] = empty($cfg['recaptcha']['secret']) ? "Missing RECAPTCHA_SECRET" : '';
         $errors = array_filter($errors);
-        if(!empty($errors)) {
+        if (!empty($errors)) {
             $message['fail'] = 'Missing configuration.';
             include BASE_PATH . "views/error.php";
             die();
@@ -149,20 +157,21 @@ class Inviter {
     /**
      * @param array postdata(email, [firstname], [lastname])
      */ 
-    private function _slackInvite($data) {
+    private function _slackInvite($data) 
+    {
         $postdata = [];
         $url = 'https://' . $this->_config['domain'] . '.slack.com/api/users.admin.invite?t=' . time();
-        if(!empty($config['channels']))
+        if (!empty($config['channels']))
             $postdata['channels'] = $this->_config['channels'];
         $postdata['set_active'] = 1;
         $postdata['token'] = $this->_config['token'];
         $postdata['email'] = $data['email'];
         
-        if( !empty($data['firstname']) ) {
+        if ( !empty($data['firstname']) ) {
             $postdata['firstname'] = $data['firstname'];
         }
 
-        if( !empty($data['lastname']) ) {
+        if ( !empty($data['lastname']) ) {
             $postdata['lastname'] = $data['lastname'];
         }
 
